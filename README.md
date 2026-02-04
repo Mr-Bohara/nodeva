@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Personal Expense Tracking System Deployment
 
 ## 1. Google Sheets & Apps Script Setup
@@ -37,3 +38,6 @@
 2. Go to Settings > Pages.
 3. Select `main` branch and save.
 4. Visit your site!
+=======
+# nodeva
+>>>>>>> f7c2ee69746b0e0943d6bce74e69893b6558df2f

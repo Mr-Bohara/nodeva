@@ -2,6 +2,17 @@
 // Replace this with the authorized email address
 const AUTHORIZED_EMAIL = "mr.dhanushbohara@gmail.com"; 
 
+// YOUR SPECIFIC SPREADSHEET ID
+const SPREADSHEET_ID = "1lODAMJKUjwugEbLTvFhrB3JqgJ2fGJZrTXAVhlKDMqM";
+
+function getSpreadsheet() {
+  let doc = SpreadsheetApp.getActiveSpreadsheet();
+  if (!doc) {
+    doc = SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return doc;
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -9,20 +20,15 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const userEmail = data.userEmail;
-    // const idToken = data.idToken; 
     
     // SECURITY CHECK
-    // In a real production app, you should validate the idToken with Google's API to ensure it wasn't forged.
-    // For this lightweight personal version, we check if the email matches the owner.
-    // Since the frontend uses Google Sign-In, the email comes from there.
-    // Ideally, pass 'idToken' to https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=... to verify identity server-side.
     if (userEmail !== AUTHORIZED_EMAIL) {
       return ContentService
         .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized user' }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    const doc = SpreadsheetApp.getActiveSpreadsheet();
+    const doc = getSpreadsheet();
     const sheetName = data.sheetName;
     let sheet = doc.getSheetByName(sheetName);
 
@@ -75,7 +81,7 @@ function doGet(e) {
   const action = e.parameter.action;
   
   if (action === 'getSummary') {
-      const doc = SpreadsheetApp.getActiveSpreadsheet();
+      const doc = getSpreadsheet();
       
       // Assumes Sheet 5 and 6 are set up with formulas, or we calculate here.
       // Let's calculate dynamically so we don't rely on brittle sheet cell references (like 'Sheet5!A1')
@@ -192,13 +198,38 @@ function getSumForPeriod(sheet, dateColIndex, priceColIndex, month, year) {
 }
 
 
+// --- TEST FUNCTION (Use this to verify if script is working) ---
+function testPost() {
+  const mockEvent = {
+    postData: {
+      contents: JSON.stringify({
+        userEmail: AUTHORIZED_EMAIL,
+        sheetName: "Pasal Kharcha",
+        item_name: "Test Item",
+        price: 100,
+        date_time: new Date().toISOString()
+      })
+    }
+  };
+  const result = doPost(mockEvent);
+  Logger.log(result.getContent());
+}
+
+// --- SETUP FUNCTIONS ---
+
 function setup() {
-  const doc = SpreadsheetApp.getActiveSpreadsheet();
+  const doc = getSpreadsheet();
+  
+  if (!doc) {
+    throw new Error("Spreadsheet not found! Check your SPREADSHEET_ID in Code.gs");
+  }
   
   createSheetIfNotExists(doc, 'Pasal Kharcha', ['Item Name', 'Price', 'Date Time', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'Kotha Vada', ['Date', 'Price', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'College Fee', ['Semester', 'Category', 'Price', 'Date', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'Personal Kharcha', ['Category', 'Price', 'Date', 'User Email', 'Timestamp']);
+  
+  console.log("Setup complete! All sheets created.");
 }
 
 function createSheetIfNotExists(doc, name, headers) {

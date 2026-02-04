@@ -8,9 +8,24 @@ const SPREADSHEET_ID = "1lODAMJKUjwugEbLTvFhrB3JqgJ2fGJZrTXAVhlKDMqM";
 function getSpreadsheet() {
   let doc = SpreadsheetApp.getActiveSpreadsheet();
   if (!doc) {
-    doc = SpreadsheetApp.openById(SPREADSHEET_ID);
+    try {
+      doc = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch (e) {
+      console.error("Could not open spreadsheet by ID: " + e.toString());
+    }
   }
   return doc;
+}
+
+// Helper to find sheet regardless of Big/Small letters
+function getSheetCaseInsensitive(doc, name) {
+  const sheets = doc.getSheets();
+  for (let i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().toLowerCase() === name.toLowerCase()) {
+      return sheets[i];
+    }
+  }
+  return null;
 }
 
 function doPost(e) {
@@ -22,32 +37,21 @@ function doPost(e) {
     const userEmail = (data.userEmail || "").trim().toLowerCase();
     const targetEmail = AUTHORIZED_EMAIL.trim().toLowerCase();
     
-    console.log("Incoming request from: " + userEmail);
-    console.log("Data: " + JSON.stringify(data));
+    console.log("Request from: " + userEmail);
 
     // SECURITY CHECK (Case-insensitive)
     if (userEmail !== targetEmail) {
-      console.error("Unauthorized: " + userEmail + " does not match " + targetEmail);
+      console.error("Unauthorized: " + userEmail);
       return ContentService
-        .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized user' }))
+        .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized' }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     const doc = getSpreadsheet();
     const sheetName = data.sheetName;
-    
-    // Find sheet case-insensitively
-    let sheet = null;
-    const allSheets = doc.getSheets();
-    for (let s of allSheets) {
-      if (s.getName().toLowerCase() === sheetName.toLowerCase()) {
-        sheet = s;
-        break;
-      }
-    }
+    const sheet = getSheetCaseInsensitive(doc, sheetName);
 
     if (!sheet) {
-      console.error("Sheet not found: " + sheetName);
       return ContentService
         .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Sheet not found: ' + sheetName }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -61,29 +65,25 @@ function doPost(e) {
     // Personal Kharcha: category, price, date, user_email
     
     let rowData = [];
-    const lowerSheetName = sheetName.toLowerCase();
+    const lowerName = sheetName.toLowerCase();
     
-    if (lowerSheetName === 'pasal kharcha') {
+    if (lowerName === 'pasal kharcha') {
       rowData = [data.item_name, data.price, data.date_time, userEmail, new Date()];
-    } else if (lowerSheetName === 'kotha vada') {
+    } else if (lowerName === 'kotha vada') {
       rowData = [data.date, data.price, userEmail, new Date()];
-    } else if (lowerSheetName === 'college fee') {
+    } else if (lowerName === 'college fee') {
       rowData = [data.semester, data.category, data.price, data.date, userEmail, new Date()];
-    } else if (lowerSheetName === 'personal kharcha') {
+    } else if (lowerName === 'personal kharcha') {
       rowData = [data.category, data.price, data.date, userEmail, new Date()];
     }
 
     sheet.appendRow(rowData);
-    console.log("Success: Row appended to " + sheet.getName());
-    
-    // Refresh Formula Sheets if needed (Optional, usually automatic)
-
     return ContentService
       .createTextOutput(JSON.stringify({ 'status': 'success' }))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
-    console.error("Error in doPost: " + error.toString());
+    console.error("Error: " + error.toString());
     return ContentService
       .createTextOutput(JSON.stringify({ 'status': 'error', 'message': error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -120,7 +120,7 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
   }
   
-  return ContentService.createTextOutput("Hello World");
+  return ContentService.createTextOutput("Active");
 }
 
 function calculateTotal(doc) {
@@ -132,10 +132,10 @@ function calculateTotal(doc) {
   // College Fee (Price is C -> 2)
   // Personal Kharcha (Price is B -> 1)
   
-  sum += getColumnSum(doc.getSheetByName('Pasal Kharcha'), 1);
-  sum += getColumnSum(doc.getSheetByName('Kotha Vada'), 1);
-  sum += getColumnSum(doc.getSheetByName('College Fee'), 2);
-  sum += getColumnSum(doc.getSheetByName('Personal Kharcha'), 1);
+  sum += getColumnSum(getSheetCaseInsensitive(doc, 'Pasal Kharcha'), 1);
+  sum += getColumnSum(getSheetCaseInsensitive(doc, 'Kotha Vada'), 1);
+  sum += getColumnSum(getSheetCaseInsensitive(doc, 'College Fee'), 2);
+  sum += getColumnSum(getSheetCaseInsensitive(doc, 'Personal Kharcha'), 1);
   
   return sum;
 }
@@ -168,10 +168,10 @@ function calculateMonthly(doc) {
 
   // Example for Pasal Kharcha (Date is C -> 2, Price is B -> 1)
   // Date format is input type="datetime-local" or "date" -> ISO string YYYY-MM-DD...
-  sum += getSumForPeriod(doc.getSheetByName('Pasal Kharcha'), 2, 1, currentMonth, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('Kotha Vada'), 0, 1, currentMonth, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('College Fee'), 3, 2, currentMonth, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('Personal Kharcha'), 2, 1, currentMonth, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Pasal Kharcha'), 2, 1, currentMonth, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Kotha Vada'), 0, 1, currentMonth, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'College Fee'), 3, 2, currentMonth, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Personal Kharcha'), 2, 1, currentMonth, currentYear);
 
   return sum;
 }
@@ -180,10 +180,10 @@ function calculateYearly(doc) {
   const currentYear = new Date().getFullYear();
   let sum = 0;
   
-  sum += getSumForPeriod(doc.getSheetByName('Pasal Kharcha'), 2, 1, null, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('Kotha Vada'), 0, 1, null, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('College Fee'), 3, 2, null, currentYear);
-  sum += getSumForPeriod(doc.getSheetByName('Personal Kharcha'), 2, 1, null, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Pasal Kharcha'), 2, 1, null, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Kotha Vada'), 0, 1, null, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'College Fee'), 3, 2, null, currentYear);
+  sum += getSumForPeriod(getSheetCaseInsensitive(doc, 'Personal Kharcha'), 2, 1, null, currentYear);
 
   return sum;
 }
@@ -247,66 +247,31 @@ function setup() {
   createSheetIfNotExists(doc, 'College Fee', ['Semester', 'Category', 'Price', 'Date', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'Personal Kharcha', ['Category', 'Price', 'Date', 'User Email', 'Timestamp']);
   
-  console.log("Setup complete! All sheets created.");
+  console.log("Setup Ready.");
 }
 
 // --- SEEDING FUNCTION (Run this to fill with month's data) ---
 function seedDatabase() {
   const doc = getSpreadsheet();
   const email = AUTHORIZED_EMAIL;
+  setup(); // Ensure tables are there
   
-  // Ensure sheets exist
-  setup();
-  
-  const now = new Date();
-  const past30Days = 30;
-  
-  // 1. Seed Pasal Kharcha
-  const shopSheet = doc.getSheetByName('Pasal Kharcha');
-  const items = ["Rice", "Cooking Oil", "Vegetables", "Milk", "Soap", "Tea Powder"];
-  for (let i = 0; i < 15; i++) {
-    let d = new Date();
-    d.setDate(now.getDate() - Math.floor(Math.random() * past30Days));
-    shopSheet.appendRow([
-      items[Math.floor(Math.random() * items.length)],
-      Math.floor(Math.random() * 1000) + 50,
-      d.toISOString(),
-      email,
-      new Date()
-    ]);
-  }
-  
-  // 2. Seed Kotha Vada (Once a month)
-  const rentSheet = doc.getSheetByName('Kotha Vada');
-  let rentDate = new Date();
-  rentDate.setDate(1); // 1st of current month
-  rentSheet.appendRow([rentDate.toISOString().split('T')[0], 5000, email, new Date()]);
+  const shopSheet = getSheetCaseInsensitive(doc, 'Pasal Kharcha');
+  const personalSheet = getSheetCaseInsensitive(doc, 'Personal Kharcha');
+  const rentSheet = getSheetCaseInsensitive(doc, 'Kotha Vada');
+  const collegeSheet = getSheetCaseInsensitive(doc, 'College Fee');
 
-  // 3. Seed College Fee
-  const collegeSheet = doc.getSheetByName('College Fee');
-  collegeSheet.appendRow(["5", "Tuition Fee", 15000, now.toISOString().split('T')[0], email, new Date()]);
-  collegeSheet.appendRow(["5", "Exam Fee", 2500, now.toISOString().split('T')[0], email, new Date()]);
-
-  // 4. Seed Personal Kharcha
-  const personalSheet = doc.getSheetByName('Personal Kharcha');
-  const categories = ["Snacks", "Mobile Recharge", "Bus Fare", "Movie", "Gifts"];
-  for (let i = 0; i < 20; i++) {
-    let d = new Date();
-    d.setDate(now.getDate() - Math.floor(Math.random() * past30Days));
-    personalSheet.appendRow([
-      categories[Math.floor(Math.random() * categories.length)],
-      Math.floor(Math.random() * 500) + 20,
-      d.toISOString().split('T')[0],
-      email,
-      new Date()
-    ]);
-  }
+  // Fill some data
+  shopSheet.appendRow(["Rice", 1200, new Date().toISOString(), email, new Date()]);
+  personalSheet.appendRow(["Snacks", 150, new Date().toISOString(), email, new Date()]);
+  rentSheet.appendRow([new Date().toISOString(), 6000, email, new Date()]);
+  collegeSheet.appendRow(["5", "Tuition", 12000, new Date().toISOString(), email, new Date()]);
   
-  console.log("Database seeded with mock data for the last month!");
+  console.log("Seed Done. Please check your sheet tabs.");
 }
 
 function createSheetIfNotExists(doc, name, headers) {
-  let sheet = doc.getSheetByName(name);
+  let sheet = getSheetCaseInsensitive(doc, name);
   if (!sheet) {
     sheet = doc.insertSheet(name);
     sheet.appendRow(headers);

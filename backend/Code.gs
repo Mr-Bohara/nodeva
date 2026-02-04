@@ -250,6 +250,61 @@ function setup() {
   console.log("Setup complete! All sheets created.");
 }
 
+// --- SEEDING FUNCTION (Run this to fill with month's data) ---
+function seedDatabase() {
+  const doc = getSpreadsheet();
+  const email = AUTHORIZED_EMAIL;
+  
+  // Ensure sheets exist
+  setup();
+  
+  const now = new Date();
+  const past30Days = 30;
+  
+  // 1. Seed Pasal Kharcha
+  const shopSheet = doc.getSheetByName('Pasal Kharcha');
+  const items = ["Rice", "Cooking Oil", "Vegetables", "Milk", "Soap", "Tea Powder"];
+  for (let i = 0; i < 15; i++) {
+    let d = new Date();
+    d.setDate(now.getDate() - Math.floor(Math.random() * past30Days));
+    shopSheet.appendRow([
+      items[Math.floor(Math.random() * items.length)],
+      Math.floor(Math.random() * 1000) + 50,
+      d.toISOString(),
+      email,
+      new Date()
+    ]);
+  }
+  
+  // 2. Seed Kotha Vada (Once a month)
+  const rentSheet = doc.getSheetByName('Kotha Vada');
+  let rentDate = new Date();
+  rentDate.setDate(1); // 1st of current month
+  rentSheet.appendRow([rentDate.toISOString().split('T')[0], 5000, email, new Date()]);
+
+  // 3. Seed College Fee
+  const collegeSheet = doc.getSheetByName('College Fee');
+  collegeSheet.appendRow(["5", "Tuition Fee", 15000, now.toISOString().split('T')[0], email, new Date()]);
+  collegeSheet.appendRow(["5", "Exam Fee", 2500, now.toISOString().split('T')[0], email, new Date()]);
+
+  // 4. Seed Personal Kharcha
+  const personalSheet = doc.getSheetByName('Personal Kharcha');
+  const categories = ["Snacks", "Mobile Recharge", "Bus Fare", "Movie", "Gifts"];
+  for (let i = 0; i < 20; i++) {
+    let d = new Date();
+    d.setDate(now.getDate() - Math.floor(Math.random() * past30Days));
+    personalSheet.appendRow([
+      categories[Math.floor(Math.random() * categories.length)],
+      Math.floor(Math.random() * 500) + 20,
+      d.toISOString().split('T')[0],
+      email,
+      new Date()
+    ]);
+  }
+  
+  console.log("Database seeded with mock data for the last month!");
+}
+
 function createSheetIfNotExists(doc, name, headers) {
   let sheet = doc.getSheetByName(name);
   if (!sheet) {

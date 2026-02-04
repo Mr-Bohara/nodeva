@@ -1,6 +1,6 @@
 // Configuration
 // TODO: User must replace this with their deployed Web App URL
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4R90Q5qlNaTdPa8a-mF-MAF1SFYCSfnv478wesPrNuehCXpPXlF7-PdS43OMFphyP/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz1MA3CBVgwY2xIuijE2aHVYB5RLu0YFhtHwuZgpC-smEmL5XDpowGzrdBBYzB73cxb/exec";
 
 // State
 let currentUserEmail = localStorage.getItem('user_email');
@@ -25,23 +25,23 @@ function handleSimpleLogin(event) {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
-    // Authorized Email Check
-    const authorizedEmail = "mr.dhanushbohara@gmail.com";
+    // Authorized Email Check (Case-insensitive)
+    const authorizedEmail = "mr.dhanushbohara@gmail.com".toLowerCase();
 
     // Hardcoded credentials for testing
-    if (email === authorizedEmail && password === 'admin123') {
+    if (email.toLowerCase() === authorizedEmail && password === 'admin123') {
         console.log("Logged in as: " + email);
 
         // Save session
-        localStorage.setItem('user_email', email);
+        localStorage.setItem('user_email', email.toLowerCase());
         localStorage.setItem('id_token', 'mock_token_' + Date.now());
 
-        currentUserEmail = email;
+        currentUserEmail = email.toLowerCase();
         idToken = localStorage.getItem('id_token');
 
         showDashboard(currentUserEmail);
     } else {
-        alert("Unauthorized! Only mr.dhanushbohara@gmail.com is allowed.");
+        alert("Unauthorized or Wrong Password!");
     }
 }
 

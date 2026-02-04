@@ -19,10 +19,15 @@ function doPost(e) {
 
   try {
     const data = JSON.parse(e.postData.contents);
-    const userEmail = data.userEmail;
+    const userEmail = (data.userEmail || "").trim().toLowerCase();
+    const targetEmail = AUTHORIZED_EMAIL.trim().toLowerCase();
     
-    // SECURITY CHECK
-    if (userEmail !== AUTHORIZED_EMAIL) {
+    console.log("Incoming request from: " + userEmail);
+    console.log("Data: " + JSON.stringify(data));
+
+    // SECURITY CHECK (Case-insensitive)
+    if (userEmail !== targetEmail) {
+      console.error("Unauthorized: " + userEmail + " does not match " + targetEmail);
       return ContentService
         .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized user' }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -30,14 +35,24 @@ function doPost(e) {
 
     const doc = getSpreadsheet();
     const sheetName = data.sheetName;
-    let sheet = doc.getSheetByName(sheetName);
-
-    if (!sheet) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Sheet not found' }))
-        .setMimeType(ContentService.MimeType.JSON);
+    
+    // Find sheet case-insensitively
+    let sheet = null;
+    const allSheets = doc.getSheets();
+    for (let s of allSheets) {
+      if (s.getName().toLowerCase() === sheetName.toLowerCase()) {
+        sheet = s;
+        break;
+      }
     }
 
+    if (!sheet) {
+      console.error("Sheet not found: " + sheetName);
+      return ContentService
+        .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Sheet not found: ' + sheetName }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // Append Logic based on Sheet
     // Sheet Headers assumed:
     // Pasal Kharcha: item_name, price, date_time, user_email
@@ -46,18 +61,20 @@ function doPost(e) {
     // Personal Kharcha: category, price, date, user_email
     
     let rowData = [];
+    const lowerSheetName = sheetName.toLowerCase();
     
-    if (sheetName === 'Pasal Kharcha') {
+    if (lowerSheetName === 'pasal kharcha') {
       rowData = [data.item_name, data.price, data.date_time, userEmail, new Date()];
-    } else if (sheetName === 'Kotha Vada') {
+    } else if (lowerSheetName === 'kotha vada') {
       rowData = [data.date, data.price, userEmail, new Date()];
-    } else if (sheetName === 'College Fee') {
+    } else if (lowerSheetName === 'college fee') {
       rowData = [data.semester, data.category, data.price, data.date, userEmail, new Date()];
-    } else if (sheetName === 'Personal Kharcha') {
+    } else if (lowerSheetName === 'personal kharcha') {
       rowData = [data.category, data.price, data.date, userEmail, new Date()];
     }
 
     sheet.appendRow(rowData);
+    console.log("Success: Row appended to " + sheet.getName());
     
     // Refresh Formula Sheets if needed (Optional, usually automatic)
 
@@ -65,9 +82,10 @@ function doPost(e) {
       .createTextOutput(JSON.stringify({ 'status': 'success' }))
       .setMimeType(ContentService.MimeType.JSON);
 
-  } catch (e) {
+  } catch (error) {
+    console.error("Error in doPost: " + error.toString());
     return ContentService
-      .createTextOutput(JSON.stringify({ 'status': 'error', 'message': e.toString() }))
+      .createTextOutput(JSON.stringify({ 'status': 'error', 'message': error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
     lock.releaseLock();

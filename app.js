@@ -257,8 +257,17 @@ function renderHistory(data) {
                 <td style="padding: 12px;"><span style="background: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${item.type}</span></td>
                 <td style="padding: 12px; color: white;">${item.name}</td>
                 <td style="padding: 12px; color: #10b981; font-weight: 600;">Rs. ${item.price}</td>
+                <td style="padding: 12px;"><button class="delete-btn" onclick="deleteRecordLocally('${item.timestamp}')">Delete</button></td>
             </tr>
         `;
     }).join('');
+}
+
+function deleteRecordLocally(timestamp) {
+    if (confirm("Remove this entry from the current view? (This will not delete it from the Google Sheet)")) {
+        allHistoryData = allHistoryData.filter(item => item.timestamp !== timestamp);
+        applyHistoryFilter();
+        showNotification("Record removed from view locally.", "success");
+    }
 }
 

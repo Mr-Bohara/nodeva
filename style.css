@@ -50,7 +50,7 @@ body {
     padding: 2.5rem;
     border-radius: var(--border-radius);
     text-align: center;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     max-width: 400px;
     width: 90%;
 }
@@ -108,7 +108,8 @@ header {
 #user-email {
     font-size: 0.9rem;
     color: var(--text-secondary);
-    display: none; /* Hidden on mobile */
+    display: none;
+    /* Hidden on mobile */
 }
 
 @media (min-width: 768px) {
@@ -140,6 +141,19 @@ header {
     padding-bottom: 1rem;
     margin-bottom: 1rem;
     scrollbar-width: none;
+    padding-top: 0.5rem;
+}
+
+@media (max-width: 600px) {
+    .tabs {
+        gap: 0.3rem;
+    }
+
+    .tab-btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+        border-radius: 12px;
+    }
 }
 
 .tabs::-webkit-scrollbar {
@@ -181,8 +195,15 @@ header {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 h2 {
@@ -201,7 +222,8 @@ label {
     font-size: 0.9rem;
 }
 
-input, select {
+input,
+select {
     width: 100%;
     background: #0f172a;
     border: 1px solid #334155;
@@ -213,7 +235,8 @@ input, select {
     transition: border-color 0.2s;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
     border-color: var(--accent-color);
 }
 
@@ -266,9 +289,17 @@ input:focus, select:focus {
     font-weight: 700;
 }
 
-.card.total p { color: var(--accent-color); }
-.card.monthly p { color: var(--success-color); }
-.card.yearly p { color: #fbbf24; }
+.card.total p {
+    color: var(--accent-color);
+}
+
+.card.monthly p {
+    color: var(--success-color);
+}
+
+.card.yearly p {
+    color: #fbbf24;
+}
 
 .refresh-btn {
     background: transparent;
@@ -302,7 +333,7 @@ input:focus, select:focus {
     color: white;
     padding: 1rem 1.5rem;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     border-left: 4px solid var(--accent-color);
     animation: slideIn 0.3s ease;
     display: flex;
@@ -310,10 +341,47 @@ input:focus, select:focus {
     gap: 10px;
 }
 
-.toast.success { border-left-color: var(--success-color); }
-.toast.error { border-left-color: var(--danger-color); }
+.toast.success {
+    border-left-color: var(--success-color);
+}
+
+.toast.error {
+    border-left-color: var(--danger-color);
+}
 
 @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.delete-btn {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+@media (max-width: 600px) {
+
+    .table-container th,
+    .table-container td {
+        padding: 8px 4px !important;
+        font-size: 0.85rem;
+    }
 }

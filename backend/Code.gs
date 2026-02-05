@@ -1,5 +1,5 @@
 const AUTHORIZED_EMAILS = [
-  "mrdhanushbohara@gmail.com",
+  "mr.dhanushbohara@gmail.com",
   "dhanush.boharaf25@techspire.edu.np"
 ];
 
@@ -129,33 +129,38 @@ function doPost(e) {
     let rowData = [];
     const lowerName = sheetName.toLowerCase();
 
-    if (lowerName === 'pasal kharcha') {
-      rowData = [data.item_name, data.price, data.date_time, userEmail, new Date(), 'Active'];
+    // Use a unique string timestamp for all new rows to ensure reliable matching
+    const rowTimestamp = Date.now().toString();
+
+    if (lowerName === 'pasal kharcha' || data.action === 'addExpense') {
+      rowData = [data.item_name, data.price, data.date_time, userEmail, rowTimestamp, 'Active'];
     } else if (lowerName === 'kotha vada') {
-      rowData = [data.date, data.price, userEmail, new Date(), 'Active'];
+      rowData = [data.date, data.price, userEmail, rowTimestamp, 'Active'];
     } else if (lowerName === 'college fee') {
-      rowData = [data.semester, data.category, data.price, data.date, userEmail, new Date(), 'Active'];
+      rowData = [data.semester, data.category, data.price, data.date, userEmail, rowTimestamp, 'Active'];
     } else if (lowerName === 'personal kharcha') {
-      rowData = [data.category, data.price, data.date, userEmail, new Date(), 'Active'];
-    } else if (lowerName === 'todo') {
-      rowData = [data.text, data.date_time, false, userEmail, new Date(), 'Active'];
+      rowData = [data.category, data.price, data.date, userEmail, rowTimestamp, 'Active'];
+    } else if (lowerName === 'todo' || action === 'addTodo') {
+      rowData = [data.text, data.date_time, false, userEmail, rowTimestamp, 'Active'];
     }
 
-    sheet.appendRow(rowData);
+    if (rowData.length > 0) {
+      sheet.appendRow(rowData);
+    }
 
     // --- ALSO ADD TO HISTORY SHEET (Only for kharcha) ---
-    if (lowerName !== 'todo') {
+    if (lowerName !== 'todo' && action !== 'addTodo') {
       const historySheet = getSheetCaseInsensitive(doc, 'History');
       if (historySheet) {
         let historyRow = [];
         if (lowerName === 'pasal kharcha') {
-          historyRow = [data.date_time, 'Shop', data.item_name, data.price, userEmail, new Date(), 'Active'];
+          historyRow = [data.date_time, 'Shop', data.item_name, data.price, userEmail, rowTimestamp, 'Active'];
         } else if (lowerName === 'kotha vada') {
-          historyRow = [data.date, 'Rent', 'Room Rent', data.price, userEmail, new Date(), 'Active'];
+          historyRow = [data.date, 'Rent', 'Room Rent', data.price, userEmail, rowTimestamp, 'Active'];
         } else if (lowerName === 'college fee') {
-          historyRow = [data.date, 'College', data.category + ' (Sem ' + data.semester + ')', data.price, userEmail, new Date(), 'Active'];
+          historyRow = [data.date, 'College', data.category + ' (Sem ' + data.semester + ')', data.price, userEmail, rowTimestamp, 'Active'];
         } else if (lowerName === 'personal kharcha') {
-          historyRow = [data.date, 'Personal', data.category, data.price, userEmail, new Date(), 'Active'];
+          historyRow = [data.date, 'Personal', data.category, data.price, userEmail, rowTimestamp, 'Active'];
         }
         if (historyRow.length > 0) {
           historySheet.appendRow(historyRow);
@@ -233,9 +238,9 @@ function fetchTodos(doc, userEmail) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
-  const data = sheet.getRange(2, 1, lastRow - 1, 5).getValues();
+  const data = sheet.getRange(2, 1, lastRow - 1, 6).getValues(); // Get all 6 columns
   return data
-    .filter(row => row[3].toLowerCase() === userEmail && row[row.length - 1] !== 'Deleted')
+    .filter(row => row[3].toString().toLowerCase() === userEmail.toLowerCase() && row[5] !== 'Deleted')
     .map(row => ({
       text: row[0],
       date_time: row[1],

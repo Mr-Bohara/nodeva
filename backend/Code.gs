@@ -1,5 +1,5 @@
 const AUTHORIZED_EMAILS = [
-  "mr.dhanushbohara@gmail.com",
+  "mrdhanushbohara@gmail.com",
   "dhanush.boharaf25@techspire.edu.np"
 ];
 

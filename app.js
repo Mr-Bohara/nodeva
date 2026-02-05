@@ -1,10 +1,6 @@
 // Configuration
 // TODO: User must replace this with their deployed Web App URL
-<<<<<<< HEAD
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbymFuqClbLYR4nOAL7GAIYhcp31Nr6aHhjVUHZhiBmt1vy3bMl2cjRV0fmnuuQMZw8/exec";
-=======
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx1LaexMGs2mj8tGae2XDxL0pCRpRqu1xbOUIXEgIP1BaCZom3sMU1_9wltwK8sh7vv/exec";
->>>>>>> 5eec07b2983ef83ac51eee389babaf78e1f913a0
 
 // State
 let currentUserEmail = localStorage.getItem('user_email');
@@ -69,7 +65,7 @@ function handleCredentialResponse(response) {
 
     // Restricted Authorized Emails
     const authorizedEmails = [
-        "mr.dhanushbohara@gmail.com",
+        "mrdhanushbohara@gmail.com",
         "dhanush.boharaf25@techspire.edu.np"
     ];
 

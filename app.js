@@ -5,6 +5,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwTI_R13iDWbn0JtKex
 // State
 let currentUserEmail = localStorage.getItem('user_email');
 let idToken = localStorage.getItem('id_token');
+let allHistoryData = []; // Store fetched records for filtering
+
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,7 +86,6 @@ function showDashboard(email) {
 
     // Default tab
     switchTab('shop');
-    fetchSummary();
 }
 
 function showLogin() {
@@ -113,7 +114,13 @@ function switchTab(tabId) {
     // Activate button (find button with onclick matching token)
     const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
     if (btn) btn.classList.add('active');
+
+    // Fetch tab specific data
+    if (tabId === 'history') {
+        fetchHistory();
+    }
 }
+
 
 // --- API Interactions ---
 
@@ -191,29 +198,86 @@ function getSheetNameForCategory(category) {
     return 'Unknown';
 }
 
-async function fetchSummary() {
+
+async function fetchHistory() {
     if (WEB_APP_URL.includes("REPLACE_WITH")) return;
 
-    const totalEl = document.getElementById('total-expense');
-    const monthlyEl = document.getElementById('monthly-expense');
-    const yearlyEl = document.getElementById('yearly-expense');
-
-    totalEl.textContent = "Refreshing...";
+    const tbody = document.getElementById('history-body');
+    // We don't clear immediately to avoid flicker if it's fast, but let's show status
+    const rows = tbody.querySelectorAll('tr');
+    if (rows.length === 0 || (rows.length === 1 && rows[0].textContent.includes('Loading'))) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">Loading history...</td></tr>';
+    }
 
     try {
-        const url = `${WEB_APP_URL}?action=getSummary&userEmail=${currentUserEmail}&idToken=${idToken}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        // Add cache-buster to avoid stale browser cache
+        const cacheBuster = Date.now();
+        const url = `${WEB_APP_URL}?action=getHistory&userEmail=${currentUserEmail}&idToken=${idToken}&cb=${cacheBuster}`;
 
-        if (data.status === 'success') {
-            totalEl.textContent = "Rs. " + data.total;
-            monthlyEl.textContent = "Rs. " + data.monthly;
-            yearlyEl.textContent = "Rs. " + data.yearly;
+        console.log("Fetching history from:", url);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            allHistoryData = result.data || [];
+            applyHistoryFilter(); // This will call renderHistory with current filter
         } else {
-            totalEl.textContent = "Error";
+            tbody.innerHTML = `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #ef4444;">Backend Error: ${result.message || 'Unknown error'}</td></tr>`;
         }
     } catch (e) {
-        console.error(e);
-        totalEl.textContent = "N/A";
+        console.error("Fetch history error:", e);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="padding: 20px; text-align: center;">
+                    <p style="color: #ef4444; margin-bottom: 10px;">Network Error or Script Deployment Issue</p>
+                    <p style="font-size: 0.85rem; color: #94a3b8;">Please ensure you have deployed your Google Apps Script as "Anyone" and updated the WEB_APP_URL in app.js.</p>
+                </td>
+            </tr>`;
     }
 }
+
+function applyHistoryFilter() {
+    const filter = document.getElementById('history-filter').value;
+    let filteredData = allHistoryData;
+
+    if (filter !== 'All') {
+        filteredData = allHistoryData.filter(item => item.type === filter);
+    }
+
+    renderHistory(filteredData);
+}
+
+function renderHistory(data) {
+
+    const tbody = document.getElementById('history-body');
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">No records found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const date = new Date(item.date).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        return `
+            <tr style="border-bottom: 1px solid #334155; transition: background 0.2s;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 12px; color: #cbd5e1;">${date}</td>
+                <td style="padding: 12px;"><span style="background: #475569; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${item.type}</span></td>
+                <td style="padding: 12px; color: white;">${item.name}</td>
+                <td style="padding: 12px; color: #10b981; font-weight: 600;">Rs. ${item.price}</td>
+            </tr>
+        `;
+    }).join('');
+}
+

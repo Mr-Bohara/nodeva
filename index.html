@@ -64,8 +64,9 @@
             <button class="tab-btn" onclick="switchTab('rent')">Kotha Vada</button>
             <button class="tab-btn" onclick="switchTab('college')">College Fee</button>
             <button class="tab-btn" onclick="switchTab('personal')">Personal</button>
-            <button class="tab-btn" onclick="switchTab('summary')">Summary</button>
+            <button class="tab-btn" onclick="switchTab('history')">History</button>
         </nav>
+
 
         <main>
             <!-- Shop Expenses -->
@@ -157,25 +158,47 @@
                 </form>
             </section>
 
-            <!-- Summary -->
-            <section id="summary" class="tab-content">
-                <h2>Summary Report</h2>
-                <div class="summary-cards">
-                    <div class="card total">
-                        <h3>Total Expense</h3>
-                        <p id="total-expense">Loading...</p>
-                    </div>
-                    <div class="card monthly">
-                        <h3>This Month</h3>
-                        <p id="monthly-expense">Loading...</p>
-                    </div>
-                    <div class="card yearly">
-                        <h3>This Year</h3>
-                        <p id="yearly-expense">Loading...</p>
+
+            <!-- History -->
+            <section id="history" class="tab-content">
+                <div
+                    style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <h2>Recent Expenses</h2>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="history-filter" onchange="applyHistoryFilter()"
+                            style="background: #0f172a; color: white; border: 1px solid #334155; padding: 8px; border-radius: 6px;">
+                            <option value="All">All Categories</option>
+                            <option value="Shop">Pasal (Shop)</option>
+                            <option value="Rent">Vada (Rent)</option>
+                            <option value="College">College</option>
+                            <option value="Personal">Personal</option>
+                        </select>
+                        <button class="refresh-btn" onclick="fetchHistory()"
+                            style="margin: 0; padding: 8px 16px;">Refresh Table</button>
                     </div>
                 </div>
-                <button class="refresh-btn" onclick="fetchSummary()">Refresh Data</button>
+
+                <div class="table-container" style="overflow-x: auto;">
+                    <table
+                        style="width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden;">
+                        <thead>
+                            <tr style="background: #334155; color: white; text-align: left;">
+                                <th style="padding: 12px;">Date</th>
+                                <th style="padding: 12px;">Type</th>
+                                <th style="padding: 12px;">Item/Category</th>
+                                <th style="padding: 12px;">Price (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <tr>
+                                <td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">Loading
+                                    history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
+
         </main>
     </div>
 

@@ -1,10 +1,6 @@
 // Configuration
 // TODO: User must replace this with their deployed Web App URL
-<<<<<<< HEAD
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFAz3ItDu6qCNg4TZ-i3Ayhy3FwGCwyHqGfWFYshIYrHyxP2SLTQYzqWaa0f-mG12Q/exec";
-=======
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrrb42iSn1RiIobKhq_rW_x0h8URkJ056yDYNEDOraDgb0TaN4BR2_hQnvjO6e8yvE/exec";
->>>>>>> 3c311495ca773425a4ea0af3fc2beae83791d83a
 
 // State
 let currentUserEmail = localStorage.getItem('user_email');
@@ -150,6 +146,7 @@ function switchTab(tabId) {
 
 // --- To-Do Logic ---
 let allTodos = [];
+let editingTodoId = null; // Track which task is being edited inline
 
 async function fetchTodos() {
     const listContainer = document.getElementById('todo-list');
@@ -191,6 +188,22 @@ function renderTodos() {
         else incomplete++;
 
         const date = getNepaliDate(todo.date_time);
+        const isEditing = todo.timestamp === editingTodoId;
+
+        if (isEditing) {
+            return `
+                <div class="todo-item editing">
+                    <div class="todo-content">
+                        <input type="text" class="todo-edit-input" id="edit-input-${todo.timestamp}" value="${todo.text}" autofocus>
+                        <div class="todo-time">${date}</div>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="todo-btn save" onclick="saveEdit('${todo.timestamp}')">Save</button>
+                        <button class="todo-btn cancel" onclick="cancelEdit()">Cancel</button>
+                    </div>
+                </div>
+            `;
+        }
 
         return `
             <div class="todo-item ${todo.completed ? 'completed' : ''}">
@@ -198,13 +211,15 @@ function renderTodos() {
                      onclick="${todo.completed ? '' : `toggleTodo('${todo.timestamp}')`}">
                 </div>
                 <div class="todo-content">
-                    <div class="todo-text" onclick="editTodoLocally('${todo.timestamp}', this)">${todo.text}</div>
+                    <div class="todo-text">${todo.text}</div>
                     <div class="todo-time">${date}</div>
                 </div>
+                ${!todo.completed ? `
                 <div class="todo-actions">
-                    <button class="todo-btn edit" onclick="editTodoLocally('${todo.timestamp}')">Edit</button>
+                    <button class="todo-btn edit" onclick="startEditing('${todo.timestamp}')">Edit</button>
                     <button class="todo-btn delete" onclick="deleteTodo('${todo.timestamp}')">Delete</button>
                 </div>
+                ` : ''}
             </div>
         `;
     }).join('');
@@ -233,6 +248,17 @@ async function addTodo(event) {
     };
 
     try {
+        // Optimistic UI update
+        const tempTimestamp = Date.now().toString();
+        allTodos.unshift({
+            text: text,
+            date_time: now.toISOString(),
+            completed: false,
+            timestamp: tempTimestamp
+        });
+        renderTodos();
+        input.value = '';
+
         await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -240,8 +266,7 @@ async function addTodo(event) {
         });
 
         showNotification("Task added!", "success");
-        input.value = '';
-        fetchTodos(); // Refresh list
+        fetchTodos(); // Final sync
     } catch (e) {
         showNotification("Failed to add task", "error");
     } finally {
@@ -254,8 +279,6 @@ async function toggleTodo(timestamp) {
     const todo = allTodos.find(t => t.timestamp === timestamp);
     if (!todo || todo.completed) return;
 
-    if (!confirm("Is this task path completed? Once ticked, it cannot be unticked.")) return;
-
     const data = {
         action: 'toggleTodo',
         sheetName: 'Todo',
@@ -265,6 +288,10 @@ async function toggleTodo(timestamp) {
     };
 
     try {
+        // Optimistic UI update
+        todo.completed = true;
+        renderTodos();
+
         await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -279,6 +306,12 @@ async function toggleTodo(timestamp) {
 }
 
 async function deleteTodo(timestamp) {
+    const todo = allTodos.find(t => t.timestamp === timestamp);
+    if (todo && todo.completed) {
+        showNotification("Completed tasks cannot be deleted", "error");
+        return;
+    }
+
     if (!confirm("Are you sure you want to delete this task?")) return;
 
     const data = {
@@ -290,6 +323,10 @@ async function deleteTodo(timestamp) {
     };
 
     try {
+        // Optimistic UI update
+        allTodos = allTodos.filter(t => t.timestamp !== timestamp);
+        renderTodos();
+
         await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -302,12 +339,25 @@ async function deleteTodo(timestamp) {
     }
 }
 
-async function editTodoLocally(timestamp, element) {
-    const todo = allTodos.find(t => t.timestamp === timestamp);
-    if (!todo || todo.completed) return;
+function startEditing(timestamp) {
+    editingTodoId = timestamp;
+    renderTodos();
+}
 
-    const newText = prompt("Edit task:", todo.text);
-    if (newText === null || newText.trim() === "" || newText === todo.text) return;
+function cancelEdit() {
+    editingTodoId = null;
+    renderTodos();
+}
+
+async function saveEdit(timestamp) {
+    const input = document.getElementById(`edit-input-${timestamp}`);
+    const newText = input.value.trim();
+    const todo = allTodos.find(t => t.timestamp === timestamp);
+
+    if (!newText || newText === todo.text) {
+        cancelEdit();
+        return;
+    }
 
     const data = {
         action: 'updateTodo',
@@ -319,6 +369,11 @@ async function editTodoLocally(timestamp, element) {
     };
 
     try {
+        // Optimistic UI update
+        todo.text = newText;
+        editingTodoId = null;
+        renderTodos();
+
         await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -329,6 +384,12 @@ async function editTodoLocally(timestamp, element) {
     } catch (e) {
         showNotification("Failed to update task", "error");
     }
+}
+
+async function editTodoLocally(timestamp, element) {
+    // This function is now deprecated in favor of inline editing, 
+    // but we keep it for now and redirect to startEditing.
+    startEditing(timestamp);
 }
 
 

@@ -1,6 +1,7 @@
-// CONFIGURATION
-// Replace this with the authorized email address
-const AUTHORIZED_EMAIL = "mr.dhanushbohara@gmail.com"; 
+const AUTHORIZED_EMAILS = [
+  "mr.dhanushbohara@gmail.com",
+  "dhanush.boharaf25@techspire.edu.np"
+];
 
 // YOUR SPECIFIC SPREADSHEET ID (Verified from the links you provided)
 const SPREADSHEET_ID = "1lODAMJKUjwugEbLTvFhrB3JqgJ2fGJZrTXAVhlKDMqM";
@@ -35,12 +36,8 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const userEmail = (data.userEmail || "").trim().toLowerCase();
-    const targetEmail = AUTHORIZED_EMAIL.trim().toLowerCase();
-    
-    console.log("Request from: " + userEmail);
-
     // SECURITY CHECK (Case-insensitive)
-    if (userEmail !== targetEmail) {
+    if (!AUTHORIZED_EMAILS.includes(userEmail)) {
       console.error("Unauthorized: " + userEmail);
       return ContentService
         .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized user: ' + userEmail }))
@@ -77,6 +74,25 @@ function doPost(e) {
     }
 
     sheet.appendRow(rowData);
+
+    // --- ALSO ADD TO HISTORY SHEET ---
+    const historySheet = getSheetCaseInsensitive(doc, 'History');
+    if (historySheet) {
+      let historyRow = [];
+      if (lowerName === 'pasal kharcha') {
+        historyRow = [data.date_time, 'Shop', data.item_name, data.price, userEmail, new Date()];
+      } else if (lowerName === 'kotha vada') {
+        historyRow = [data.date, 'Rent', 'Room Rent', data.price, userEmail, new Date()];
+      } else if (lowerName === 'college fee') {
+        historyRow = [data.date, 'College', data.category + ' (Sem ' + data.semester + ')', data.price, userEmail, new Date()];
+      } else if (lowerName === 'personal kharcha') {
+        historyRow = [data.date, 'Personal', data.category, data.price, userEmail, new Date()];
+      }
+      if (historyRow.length > 0) {
+        historySheet.appendRow(historyRow);
+      }
+    }
+
     return ContentService
       .createTextOutput(JSON.stringify({ 'status': 'success' }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -96,7 +112,7 @@ function doGet(e) {
   const userEmail = (e.parameter.userEmail || "").trim().toLowerCase();
   
   // Basic security for GET too
-  if (userEmail !== AUTHORIZED_EMAIL.toLowerCase()) {
+  if (!AUTHORIZED_EMAILS.includes(userEmail)) {
     return ContentService
       .createTextOutput(JSON.stringify({ 'status': 'error', 'message': 'Unauthorized access' }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -249,6 +265,7 @@ function setup() {
   createSheetIfNotExists(doc, 'Kotha Vada', ['Date', 'Price', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'College Fee', ['Semester', 'Category', 'Price', 'Date', 'User Email', 'Timestamp']);
   createSheetIfNotExists(doc, 'Personal Kharcha', ['Category', 'Price', 'Date', 'User Email', 'Timestamp']);
+  createSheetIfNotExists(doc, 'History', ['Date', 'Type', 'Item/Category', 'Price', 'User Email', 'Timestamp']);
   console.log("Setup Ready.");
 }
 

@@ -21,49 +21,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Authentication ---
 
-// Simple Login Implementation
-function handleSimpleLogin(event) {
-    event.preventDefault();
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-
-    // Authorized Email Check (Case-insensitive)
-    const authorizedEmail = "mr.dhanushbohara@gmail.com".toLowerCase();
-
-    // Hardcoded credentials for testing
-    if (email.toLowerCase() === authorizedEmail && password === 'admin123') {
-        console.log("Logged in as: " + email);
-
-        // Save session
-        localStorage.setItem('user_email', email.toLowerCase());
-        localStorage.setItem('id_token', 'mock_token_' + Date.now());
-
-        currentUserEmail = email.toLowerCase();
-        idToken = localStorage.getItem('id_token');
-
-        showDashboard(currentUserEmail);
-    } else {
-        alert("Unauthorized or Wrong Password!");
-    }
-}
 
 // Google Sign-In Callback
 function handleCredentialResponse(response) {
-    // Decode JWT to get user info (simplified decoding)
     const responsePayload = decodeJwtResponse(response.credential);
+    const email = responsePayload.email.toLowerCase();
 
-    console.log("ID: " + responsePayload.sub);
-    console.log('Full Name: ' + responsePayload.name);
-    console.log('Given Name: ' + responsePayload.given_name);
-    console.log('Family Name: ' + responsePayload.family_name);
-    console.log("Image URL: " + responsePayload.picture);
-    console.log("Email: " + responsePayload.email);
+    // Restricted Authorized Emails
+    const authorizedEmails = [
+        "mr.dhanushbohara@gmail.com",
+        "dhanush.boharaf25@techspire.edu.np"
+    ];
+
+    if (!authorizedEmails.includes(email)) {
+        alert("Unauthorized Access! This application is restricted.");
+        return;
+    }
+
+    console.log("Logged in as: " + email);
 
     // Save session
-    localStorage.setItem('user_email', responsePayload.email);
-    localStorage.setItem('id_token', response.credential); // Store ID token for backend verification
+    localStorage.setItem('user_email', email);
+    localStorage.setItem('id_token', response.credential);
 
-    currentUserEmail = responsePayload.email;
+    currentUserEmail = email;
     idToken = response.credential;
 
     showDashboard(currentUserEmail);

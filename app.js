@@ -1,6 +1,6 @@
 // Configuration
 // TODO: User must replace this with their deployed Web App URL
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwTI_R13iDWbn0JtKexk3ZTJxXFqDV-VWWM6l_NdI-Y2-DqJw1bbbRiGW25ogV-FKvP/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjHGTfQVZdM6xLyaRGfgVK_LyaVdCXvvS-2RXb27ESAwYku6qNBDnMWNRDywSHjXGk/exec";
 
 // State
 let currentUserEmail = localStorage.getItem('user_email');
